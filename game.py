@@ -451,7 +451,7 @@ def main():
 					if event.key == K_d:
 						player.moving[3] = True
 					if event.key == K_q:
-						player.drop(weapon_pickups)
+						player.drop_weapon(weapon_pickups)
 					if event.key == K_SPACE:
 						player.dash(particles)
 				if event.type == KEYUP:
