@@ -1,5 +1,5 @@
 import pygame, entities, ui
-import math, random
+import math, random, time
 import numpy as np
 import os
 from pygame.locals import *
@@ -11,8 +11,8 @@ font = pygame.font.SysFont('Courier New', 30)
 
 COL_DEBUG = (255, 0, 255)
 scale = 1
-width = 1280
-height = 720
+width = 1000
+height = 1000
 camera = entities.Camera((width, height))
 screen = pygame.display.set_mode((int(width * scale), int(height * scale)))
 window = pygame.Surface((width, height))
@@ -68,8 +68,7 @@ for i in range(width // 32 + 4):
 
 #TODO : 
 #  : WEDNESDAY : FIX DUPLICATION BUG, CREATE MORE ENEMIES / BETTER ENEMY AI (STEERING BEHAVIORS, WITH WEIGHTED CHOICE), CREATE BOSS, CREATE MORE WEAPONS, CREATE SHIELD BURST (PUSH PROJECTILES AWAY), CHANGE DROP TO Q, CREATE SPECIAL POWERS??? (TURN SHIELD BURST INTO OTHER THINGS MAYBE OR JUST MORE POWERS THAT YOU CAN BUY AND STUFF)
-#  : THURSDAY : CREATE BETTER MAP GENERATION, CREATE ROOM CREATOR, MAPS WILL GENERATE HANDMADE ROOMS ALONG A PATH, EVENTUALLY LEADING TO ITEM ROOMS, A SHOP, AND A BOSS
-#  : FRIDAY : POLISH POLISH POLISH (Polish also means UI)
+#  : FRIDAY : POLISH POLISH POLISH (Polish also means UI), Create Boss?????
 #  : SATURDAY : MUSIC, SFX, IF NOT ENOUGH TIME JUST USE SOME OF THE PREMADE ASSESTS WE HAVE 
 
 def generate_chunks(x, y):
@@ -321,34 +320,47 @@ class GameManager():
 		self.bm.setWorldBoard()
 
 
+gm = GameManager()
+player = entities.Player([200, 200], img_player)
+wp = entities.Weapon(1, 400, player, 1, 150, img_bullets[0], img_weapons[0])
+player.weapon = wp
+game_map = {}
+temp_tiles = {}
+temp_tiles_rects = []
+tiles = pygame.sprite.Group()	
+entity_list = pygame.sprite.Group()
+projectiles = pygame.sprite.Group()
+weapon_pickups = pygame.sprite.Group()
+chests = pygame.sprite.Group()
+door_ways = pygame.sprite.Group()
+particles = pygame.sprite.Group()
+entity_list.add(player)
 
-def main():
-
+def restart():
+	global gm, player, game_map, temp_tiles, temp_tiles_rects, tiles, entity_list, projectiles, weapon_pickups, chests, door_ways, particles, entity_list
 	gm = GameManager()
-	#gm.bm.setup()
-
-	
-
 	player = entities.Player([200, 200], img_player)
 	wp = entities.Weapon(1, 400, player, 1, 150, img_bullets[0], img_weapons[0])
 	player.weapon = wp
-
-
-
-	#500 -> 300
-	#250 -> 150
-
-	game_map = {}
-	temp_tiles = {}
-	temp_tiles_rects = []
-	tiles = pygame.sprite.Group()	
-	entity_list = pygame.sprite.Group()
-	projectiles = pygame.sprite.Group()
-	weapon_pickups = pygame.sprite.Group()
-	chests = pygame.sprite.Group()
-	door_ways = pygame.sprite.Group()
-	particles = pygame.sprite.Group()
+	game_map.clear()
+	temp_tiles.clear()
+	temp_tiles_rects.clear()
+	tiles.empty()
+	entity_list.empty()
+	projectiles.empty()
+	weapon_pickups.empty()
+	chests.empty()
+	door_ways.empty()
+	particles.empty()
 	entity_list.add(player)
+	#print('here')
+
+
+def main():
+
+	
+
+	
 	
 	
 
@@ -400,6 +412,7 @@ def main():
 			draw_text('LMB : Shoot', font, (255,255,255), (750, 250), True)
 			draw_text('WASD : Move', font, (255,255,255), (750, 300), True)
 			draw_text('Q : Drop', font, (255,255,255), (750, 350), True)
+			draw_text('SPACE : Dash', font, (255,255,255), (750, 400), True)
 			
 			if play_button.draw(window):
 				if not scene_transition_timer_start:
@@ -425,7 +438,6 @@ def main():
 
 				if event.type == MOUSEBUTTONDOWN:
 					if event.button == 1:
-						#player.attack(get_mouse_pos(), projectiles)
 						pass
 					
 
@@ -643,8 +655,24 @@ def main():
 			mana_bar.draw(window)
 			health_bar.draw(window)
 
+			
+
+			if not player.alive:
+				draw_text('Game Over', font, (255,255,255), (window.get_width() // 2, window.get_height() // 2), True)
+				if not scene_transition_timer_start:
+					scene_transition_timer_start = True
+					scene_transition_timer_start = pygame.time.get_ticks()
+
+
+			if scene_transition_timer_start and scene_transition_timer_start_time + 10000 <= pygame.time.get_ticks():
+				scene_transition_timer_start = False
+				restart()
+
+
+
 			#if len(enemy_list) == 0:
 			#	draw_text('Level Complete', font, (255,255,255), (window.get_width() // 2, window.get_height() // 2), True)
+
 
 
 		screen.blit(pygame.transform.scale(window, (screen.get_width(), screen.get_height())), (0,0))
