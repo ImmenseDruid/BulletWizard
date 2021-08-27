@@ -398,7 +398,9 @@ def main():
 			draw_text("Main Menu", font, (255, 255, 255), (200, 200))
 			draw_text('Controls', font, (255,255,255), (750, 200), True)
 			draw_text('LMB : Shoot', font, (255,255,255), (750, 250), True)
-
+			draw_text('WASD : Move', font, (255,255,255), (750, 300), True)
+			draw_text('Q : Drop', font, (255,255,255), (750, 350), True)
+			
 			if play_button.draw(window):
 				if not scene_transition_timer_start:
 					scene_transition_timer_start_time = pygame.time.get_ticks()
