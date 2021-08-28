@@ -329,6 +329,10 @@ class Player(Entity):
 
 		super().update(args[0], args[1], args[2], args[3])
 
+	def damage(self, amount):
+		self.health -= amount
+		if self.health <= 0:			
+			self.alive = False
 
 	def moveUp(self):
 		self.v[1] -= self.speed
@@ -608,6 +612,9 @@ class Boss(Enemy):
 	ANTI_SPIRAL = 2
 	TWIN_SPIRALS = 3
 	CIRCLE = 4
+	DOUBLE_SPIRAL = 5
+	QUAD_SPIRAL = 6
+	LASERS = 7
 
 	def __init__(self, pos, img = None, size = (32, 32), player_ref = None, patterns = None, bullet_img = None):
 		super().__init__(pos, img, size, player_ref)
@@ -616,7 +623,7 @@ class Boss(Enemy):
 		self.patterns = patterns
 		self.pattern = self.patterns[0]
 		self.bullet_img = bullet_img
-		self.time_per_pattern = 2000
+		self.time_per_pattern = 6000
 		self.last_pattern_switch = 0
 		self.angle_offset = 0
 		self.fired_last = 0
@@ -675,6 +682,38 @@ class Boss(Enemy):
 				start_angle = angle			
 				for i in range(35):
 					angle = math.radians(start_angle + i * 10)				
+					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
+			elif self.pattern == self.DOUBLE_SPIRAL:
+				self.fire_cooldown = 250
+				angle = angle + self.angle_offset
+				self.angle_offset += 5
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				angle = angle + 180
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+			elif self.pattern == self.QUAD_SPIRAL:
+				self.fire_cooldown = 250
+				angle = angle + self.angle_offset
+				self.angle_offset += 5
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				angle = angle + 90
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				angle = angle + 180
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				angle = angle + 270
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+			elif self.pattern == self.LASERS:
+				self.fire_cooldown = 250
+				self.angle_offset += 10
+				start_angle = angle			
+				for i in range(5):
+					angle = math.radians(start_angle + i * 72+ self.angle_offset)				
 					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
 					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
 
@@ -902,7 +941,7 @@ class Weapons_Chest(pygame.sprite.Sprite):
 		num_projectiles = random.randrange(1, 11)
 		weapon_cooldown = random.randrange(100, 1000)
 		mana_cost = max(int(damage / 3 + weapon_range / 1000 + num_projectiles / 11 + weapon_cooldown / 1000), 1)
-		print(damage, weapon_range, num_projectiles, weapon_cooldown, mana_cost)
+		#print(damage, weapon_range, num_projectiles, weapon_cooldown, mana_cost)
 		pickup_list.add(WeaponPickup([self.rect.x, self.rect.y], img, img.get_size(),
 	 Weapon(damage, weapon_range, None, num_projectiles, weapon_cooldown, bullet_img, img, mana_cost)))
 		self.enabled = False

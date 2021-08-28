@@ -18,6 +18,8 @@ monitor_size = [pygame.display.Info().current_w, pygame.display.Info().current_h
 camera = entities.Camera((width, height))
 screen = pygame.display.set_mode((int(width * scale), int(height * scale)), RESIZABLE)
 window = pygame.Surface((width, height))
+button_window = pygame.Surface((screen.get_width(), screen.get_height()))
+
 
 
 def draw_text(text, font, color, pos, centered = False):
@@ -266,7 +268,7 @@ class DungeonManager():
 						self.grid_positions[f'{chamberTilePos[0]};{chamberTilePos[1]}'] = [[chamberTilePos[0], chamberTilePos[1]], EMPTY]
 
 	def BuildBossRoom(self):
-		chamberSize = random.randrange(25, 50)
+		chamberSize = 25
 		chamberOrigin = [0,0]
 		self.start_pos = chamberOrigin
 		for x in range(chamberOrigin[0], chamberOrigin[0] + chamberSize):
@@ -425,20 +427,20 @@ health_bar.set_color_background((10, 10, 10))
 
 
 def resize_ui_elements():
-	main_menu_button.x = 200 
+	main_menu_button.x = screen.get_width() // 10 
 	main_menu_button.y = 150
-	fullscreen_button.x = 200 
+	fullscreen_button.x = screen.get_width() // 10 
 	fullscreen_button.y = 300
-	SD_button.x = 450
+	SD_button.x = screen.get_width() // 10 * 4
 	SD_button.y = 300 
-	HD_button.x = 200 
+	HD_button.x = screen.get_width() // 10 
 	HD_button.y = 450
-	FHD_button.x = 450
+	FHD_button.x = screen.get_width() // 10 * 4
 	FHD_button.y = 450 
-	play_button.x = 200
-	play_button.y = 300
-	setting_button.x = 200 
-	setting_button.y = 500
+	play_button.x = screen.get_width() // 10 
+	play_button.y = screen.get_width() // 10 + 200
+	setting_button.x = screen.get_width() // 10 
+	setting_button.y = screen.get_width() // 10 + 400
 	dash_bar.set_pos((window.get_width() - 125, window.get_height() - 100))
 	mana_bar.set_pos((200, window.get_height() - 100))
 	health_bar.set_pos((200, window.get_height() - 50))
@@ -473,11 +475,15 @@ def main():
 	scene_transition_timer_start = False
 	scene_transition_timer_start_time = 0
 
+	player_wants_to_attack = False
 	#for i in range(100):
 	#	tiles.add(entities.Wall(((i * 10) * 32, i * 32), img_wall))
 
 	while run:
 		window.fill((20,20,20))
+		button_window.fill((0,0,0))
+		button_window.set_colorkey((0,0,0))
+
 		pygame.display.set_caption(f'{1/(clock.tick(60) / 1000)}')
 
 	
@@ -492,8 +498,31 @@ def main():
 							particles.add(entities.Particles([pygame.mouse.get_pos()[0] + offset[0], pygame.mouse.get_pos()[1] + offset[1]], [0,0], [0,0], 500))
 
 			particles.update()
+			camera.pos[0] += 1
+			camera.pos[1] += 1
+			gm.bm.addToBoard(camera.pos[0], camera.pos[1])
 
-			
+			if gm.bm.draw_world:
+				for tile in gm.bm.grid_positions:
+					pos = gm.bm.grid_positions[tile][0]
+					if pos[0] * 64 > camera.pos[0] - 128 and pos[0] * 64 < camera.pos[0] + camera.size[0] + 128 and pos[1] * 64 > camera.pos[1] - 128 and pos[1] * 64 < camera.pos[1] + camera.size[1] + 128:
+						temp_tiles[tile] = gm.bm.grid_positions[tile][1]
+						if temp_tiles[tile] == EMPTY:
+							#print('here')
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
+						elif temp_tiles[tile] == WALL:
+							window.blit(pygame.transform.scale(img_wall, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							temp_tiles_rects.append(pygame.Rect((gm.bm.grid_positions[tile][0][0] * 64, gm.bm.grid_positions[tile][0][1] * 64), (64, 64)))
+						elif temp_tiles[tile] == ENTERANCE:
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							door_ways.add(entities.DoorWay((gm.bm.grid_positions[tile][0][0] * 64 + 32, gm.bm.grid_positions[tile][0][1] * 64 + 32), img_enterance, (64, 64)))
+						elif temp_tiles[tile] == ENEMY:
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							if random.randrange(0, 2) == 1:
+								entity_list.add(entities.Melee_Enemy((gm.bm.grid_positions[tile][0][0] * 64 + 32, gm.bm.grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 250, None, 5, 300, img_bullets[0], img_weapons[0])))
+							else:
+								entity_list.add(entities.Ranged_Enemy((gm.bm.grid_positions[tile][0][0] * 64 + 32, gm.bm.grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 600, None, 1, 1000, img_bullets[1], img_weapons[0])))
+							gm.bm.grid_positions[tile] = [pos, EMPTY]
 
 			window.blit(img_title, (350 - img_title.get_width() // 2, 50))
 			draw_text('Controls', font, (255,255,255), (750, 200), True)
@@ -502,13 +531,13 @@ def main():
 			draw_text('Q : Drop', font, (255,255,255), (750, 350), True)
 			draw_text('SPACE : Dash', font, (255,255,255), (750, 400), True)
 			
-			if play_button.draw(window):
+			if play_button.draw(button_window):
 				if not scene_transition_timer_start:
 					scene_transition_timer_start_time = pygame.time.get_ticks()
 				scene_transition_timer_start = True
 				to_scene = 1
 
-			if setting_button.draw(window):
+			if setting_button.draw(button_window):
 				if not scene_transition_timer_start:
 					scene_transition_timer_start_time = pygame.time.get_ticks()
 				scene_transition_timer_start = True
@@ -521,8 +550,12 @@ def main():
 			if scene_transition_timer_start and pygame.time.get_ticks() > scene_transition_timer_start_time + 500:
 				scene = to_scene
 				scene_transition_timer_start = False
+				scene_transition_timer_start_time = None
+				restart()
+
 
 		elif scene == 1:
+
 			for event in pygame.event.get():
 				if event.type == QUIT:
 					run = False
@@ -573,6 +606,9 @@ def main():
 			if pygame.mouse.get_pressed()[0]:
 				if player_wants_to_attack:
 					player.attack(get_mouse_pos(), projectiles)
+					for i in range(1):
+						offset = [random.randrange(-20, 20), random.randrange(-20, 20)]
+						particles.add(entities.Particles([200 + mana_bar.r1.size[0] + offset[0] + camera.pos[0], window.get_height() - 100 + offset[1] + camera.pos[1]], [0,0], [0,0], 500, (0, 0, 255)))
 
 			if player.dungeon_transition == True:
 				player.dungeon_transition = False
@@ -580,6 +616,7 @@ def main():
 					chests.empty()
 					weapon_pickups.empty()
 					gm.enterDungeon()
+					projectiles.empty()
 					entity_list.empty()
 					entity_list.add(player)
 					player.rect.center = (gm.dm.start_pos[0] * 64 + 32, gm.dm.start_pos[1] * 64 + 32)
@@ -588,11 +625,13 @@ def main():
 					weapon_pickups.empty()
 					entity_list.empty()
 					entity_list.add(player)
+					projectiles.empty()
 					gm.enterBossRoom()
 					player.rect.center = (gm.dm.start_pos[0] * 64 + 96, gm.dm.start_pos[1] * 64 + 96)
 				else:
 					gm.exitDungeon()
 					chests.empty()
+					projectiles.empty()
 					entity_list.empty()
 					entity_list.add(player)
 					weapon_pickups.empty()
@@ -679,7 +718,7 @@ def main():
 								entity_list.add(entities.Ranged_Enemy((gm.bm.dungeon_grid_positions[tile][0][0] * 64 + 32, gm.bm.dungeon_grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 600, None, 1, 1000, img_bullets[1], img_weapons[0])))
 							gm.bm.dungeon_grid_positions[tile] = [pos, EMPTY]
 						elif temp_tiles[tile] == ENTERANCE:
-							window.blit(pygame.transform.scasle(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
 							door_ways.add(entities.DoorWay((gm.bm.dungeon_grid_positions[tile][0][0] * 64 + 32, gm.bm.dungeon_grid_positions[tile][0][1] * 64 + 32),  img_enterance, (64, 64)))
 
 			else:
@@ -698,7 +737,7 @@ def main():
 							temp_tiles_rects.append(pygame.Rect((gm.bm.boss_grid_positions[tile][0][0] * 64, gm.bm.boss_grid_positions[tile][0][1] * 64), (64, 64)))
 						elif temp_tiles[tile] == BOSS:
 							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.boss_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.boss_grid_positions[tile][0][1] * 64 - camera.pos[1]))
-							gm.dm.boss = entities.Boss((gm.bm.boss_grid_positions[tile][0][0] * 64 + 32, gm.bm.boss_grid_positions[tile][0][1] * 64 + 32), img_boss, (64,64), player, [0, 1, 2, 3, 4], img_boss_projectile)
+							gm.dm.boss = entities.Boss((gm.bm.boss_grid_positions[tile][0][0] * 64 + 32, gm.bm.boss_grid_positions[tile][0][1] * 64 + 32), img_boss, (64,64), player, [5, 6, 7], img_boss_projectile)
 							entity_list.add(gm.dm.boss)
 							gm.bm.boss_grid_positions[tile] = [pos, EMPTY]
 						elif temp_tiles[tile] == EXIT:
@@ -709,7 +748,7 @@ def main():
 					
 					if not gm.dm.boss.alive:
 						
-						gm.bm.boss_grid_positions[f'{25};{25}'] = [pos, EXIT]
+						gm.bm.boss_grid_positions[f'{12};{12}'] = [[12, 12], EXIT]
 						gm.dm.boss = None
 
 
@@ -772,10 +811,10 @@ def main():
 			for tile in tiles:
 				tile.draw(window, camera)
 			
-			pygame.draw.line(window, (20, 20, 20), (0,0), (0, height - 1), 5)
-			pygame.draw.line(window, (20, 20, 20), (0,0), (width - 1, 0), 5)
-			pygame.draw.line(window, (20, 20, 20), (width - 1, 0), (width - 1, height - 1), 5)
-			pygame.draw.line(window, (20, 20, 20), (0, height - 1), (width - 1, height - 1), 5)
+			pygame.draw.line(window, (20, 20, 20), (0,0), (0, window.get_height() - 1), 5)
+			pygame.draw.line(window, (20, 20, 20), (0,0), (window.get_width() - 1, 0), 5)
+			pygame.draw.line(window, (20, 20, 20), (window.get_width() - 1, 0), (window.get_width() - 1, window.get_height() - 1), 5)
+			pygame.draw.line(window, (20, 20, 20), (0, window.get_height() - 1), (window.get_width() - 1, window.get_height() - 1), 5)
 
 			#pygame.draw.line(window, (20, 20, 20), (width// 2, 0), (width // 2, height - 1), 5)	
 			#pygame.draw.line(window, (20, 20, 20), (0, height // 2), (width, height // 2), 5)		
@@ -811,14 +850,15 @@ def main():
 					
 
 			if not player.alive:
-				draw_text('Game Over', font, (255,255,255), (window.get_width() // 2, window.get_height() // 2), True)
-				if not scene_transition_timer_start:
-					scene_transition_timer_start = True
-					scene_transition_timer_start = pygame.time.get_ticks()
+				draw_text('Game Over', font, (255,255,255), (window.get_width() // 2, window.get_height() // 2), True)			
+				scene_transition_timer_start = True
+				if not scene_transition_timer_start_time:
+					scene_transition_timer_start_time = pygame.time.get_ticks()
 
 
-			if scene_transition_timer_start and scene_transition_timer_start_time + 10000 <= pygame.time.get_ticks():
+			if scene_transition_timer_start and scene_transition_timer_start_time + 1000 <= pygame.time.get_ticks():
 				scene_transition_timer_start = False
+				scene_transition_timer_start_time = None
 				restart()
 
 
@@ -827,6 +867,8 @@ def main():
 			#	draw_text('Level Complete', font, (255,255,255), (window.get_width() // 2, window.get_height() // 2), True)
 
 		elif scene == 2:
+
+
 			for event in pygame.event.get():
 				if event.type == QUIT:
 					run = False
@@ -843,6 +885,34 @@ def main():
 					if not fullscreen:
 						screen = pygame.display.set_mode((event.w, event.h), RESIZABLE)
 						window = pygame.Surface((event.w, event.h))
+
+
+			camera.pos[0] += 1
+			camera.pos[1] += 1
+			gm.bm.addToBoard(camera.pos[0], camera.pos[1])
+
+			if gm.bm.draw_world:
+				for tile in gm.bm.grid_positions:
+					pos = gm.bm.grid_positions[tile][0]
+					if pos[0] * 64 > camera.pos[0] - 128 and pos[0] * 64 < camera.pos[0] + camera.size[0] + 128 and pos[1] * 64 > camera.pos[1] - 128 and pos[1] * 64 < camera.pos[1] + camera.size[1] + 128:
+						temp_tiles[tile] = gm.bm.grid_positions[tile][1]
+						if temp_tiles[tile] == EMPTY:
+							#print('here')
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
+						elif temp_tiles[tile] == WALL:
+							window.blit(pygame.transform.scale(img_wall, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							temp_tiles_rects.append(pygame.Rect((gm.bm.grid_positions[tile][0][0] * 64, gm.bm.grid_positions[tile][0][1] * 64), (64, 64)))
+						elif temp_tiles[tile] == ENTERANCE:
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							door_ways.add(entities.DoorWay((gm.bm.grid_positions[tile][0][0] * 64 + 32, gm.bm.grid_positions[tile][0][1] * 64 + 32), img_enterance, (64, 64)))
+						elif temp_tiles[tile] == ENEMY:
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							if random.randrange(0, 2) == 1:
+								entity_list.add(entities.Melee_Enemy((gm.bm.grid_positions[tile][0][0] * 64 + 32, gm.bm.grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 250, None, 5, 300, img_bullets[0], img_weapons[0])))
+							else:
+								entity_list.add(entities.Ranged_Enemy((gm.bm.grid_positions[tile][0][0] * 64 + 32, gm.bm.grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 600, None, 1, 1000, img_bullets[1], img_weapons[0])))
+							gm.bm.grid_positions[tile] = [pos, EMPTY]
+
 
 			if main_menu_button.draw(window):
 				if not scene_transition_timer_start:
@@ -880,6 +950,7 @@ def main():
 				scene_transition_timer_start = False
 
 		screen.blit(pygame.transform.scale(window, (screen.get_width(), screen.get_height())), (0,0))
+		screen.blit(button_window, (0,0))
 		pygame.display.update()
 
 
