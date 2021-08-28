@@ -737,7 +737,10 @@ def main():
 							temp_tiles_rects.append(pygame.Rect((gm.bm.boss_grid_positions[tile][0][0] * 64, gm.bm.boss_grid_positions[tile][0][1] * 64), (64, 64)))
 						elif temp_tiles[tile] == BOSS:
 							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.boss_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.boss_grid_positions[tile][0][1] * 64 - camera.pos[1]))
-							gm.dm.boss = entities.Boss((gm.bm.boss_grid_positions[tile][0][0] * 64 + 32, gm.bm.boss_grid_positions[tile][0][1] * 64 + 32), img_boss, (64,64), player, [5, 6, 7], img_boss_projectile)
+							if random.randrange(0,2) == 1:
+								gm.dm.boss = entities.Boss((gm.bm.boss_grid_positions[tile][0][0] * 64 + 32, gm.bm.boss_grid_positions[tile][0][1] * 64 + 32), img_boss, (64,64), player, [5, 6, 7], img_boss_projectile)
+							else:
+								gm.dm.boss = entities.Boss((gm.bm.boss_grid_positions[tile][0][0] * 64 + 32, gm.bm.boss_grid_positions[tile][0][1] * 64 + 32), img_boss, (64,64), player, [1, 2, 3, 4], img_boss_projectile)
 							entity_list.add(gm.dm.boss)
 							gm.bm.boss_grid_positions[tile] = [pos, EMPTY]
 						elif temp_tiles[tile] == EXIT:
