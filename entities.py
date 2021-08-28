@@ -602,25 +602,90 @@ class Ranged_Enemy(Enemy):
 			self.attack(self.player_ref.rect.center, args[2])
 
 class Boss(Enemy):
-	def __init__(self, pos, img = None, size = (32, 32), player_ref = None, patterns = None):
+
+	AT_PLAYER = 0
+	SPIRAL = 1
+	ANTI_SPIRAL = 2
+	TWIN_SPIRALS = 3
+	CIRCLE = 4
+
+	def __init__(self, pos, img = None, size = (32, 32), player_ref = None, patterns = None, bullet_img = None):
 		super().__init__(pos, img, size, player_ref)
 		self.speed = 1
 		self.health = 100
 		self.patterns = patterns
+		self.pattern = self.patterns[0]
+		self.bullet_img = bullet_img
+		self.time_per_pattern = 2000
+		self.last_pattern_switch = 0
+		self.angle_offset = 0
+		self.fired_last = 0
+		self.fire_cooldown = 100
 
 	def update(self, *args):
 		super().update(args[0], args[1], args[2], args[3])
 
-		self.image = pygame.transform.rotate(self.img, get_angle_to_pos(self.rect.topleft, self.player_ref.rect.center) + 90)
+		self.image = pygame.transform.rotate(self.img, get_angle_to_pos(self.rect.topleft, self.player_ref.rect.center) - 90)
 
 		for m in range(len(self.moving)):
 			self.moving[m] = False
 
 		dist_to_player = distSqr(self.player_ref.rect.center, self.rect.center)
 
+		if self.time_per_pattern <= pygame.time.get_ticks() - self.last_pattern_switch:
+			self.pattern = random.choice(self.patterns)
+			self.last_pattern_switch = pygame.time.get_ticks()
+			self.angle_offset = 0
+
+		x_dist = self.player_ref.rect.centerx - self.rect.centerx
+		y_dist = -(self.player_ref.rect.centery - self.rect.centery)
+		angle = math.degrees(math.atan2(y_dist, x_dist))
+		angle = math.radians(angle)
+		radius = 60
+		if self.fire_cooldown <= pygame.time.get_ticks() - self.fired_last:
+			self.fired_last = pygame.time.get_ticks()
+			if self.pattern == self.AT_PLAYER:
+				self.angle_offset = 0
+				self.fire_cooldown = 100
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img))
+			elif self.pattern == self.SPIRAL:
+				self.fire_cooldown = 100
+				angle = angle + self.angle_offset
+				self.angle_offset += 5
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+			elif self.pattern == self.ANTI_SPIRAL:
+				self.fire_cooldown = 100
+				angle = angle + self.angle_offset
+				self.angle_offset += 5
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+			elif self.pattern == self.TWIN_SPIRALS:
+				self.fire_cooldown = 250
+				angle = angle + self.angle_offset
+				self.angle_offset += 5
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				angle = angle - 2 * self.angle_offset
+				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+			elif self.pattern == self.CIRCLE:
+				self.fire_cooldown = 3000
+				start_angle = angle			
+				for i in range(35):
+					angle = math.radians(start_angle + i * 10)				
+					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
+
+	def damage(self, amount):
+		self.health -= amount
+		if self.health <= 0:
+			self.alive = False
+
 
 class Projectile(Entity):
-	def __init__(self, pos, img = None, size = (8, 8), angle = 0, dist = 10):
+	def __init__(self, pos, img = None, size = (8, 8), angle = 0, dist = 10, speed = 8):
 		rect = img.get_bounding_rect()
 		surf = pygame.Surface(rect.size)
 		surf.set_colorkey((0,0,0))
@@ -630,7 +695,7 @@ class Projectile(Entity):
 		super().__init__(pos, surf, size)
 		self.color = self.img.get_at((self.img.get_width() // 2, self.img.get_height() // 2))
 		self.angle = angle
-		self.speed = 8
+		self.speed = speed
 		self.range = dist
 		#TODO : fix this for some reason 500 range == 300 in game dont know why
 		self.life_time = (self.range / self.speed) * 10

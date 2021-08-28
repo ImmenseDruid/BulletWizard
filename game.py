@@ -36,8 +36,11 @@ for file in os.listdir(os.path.join(os.path.join('Images', 'Staff'), 'Orbs')):
 		surf.set_colorkey((0,0,0))
 
 		img_bullets.append(surf)
+
+img_boss_projectile = pygame.image.load(os.path.join(os.path.join('Images', 'Weapons'), 'boss_projectile.png')).convert_alpha()
 img_player = pygame.image.load(os.path.join(os.path.join('Images', 'Entities'), 'player.png')).convert_alpha()
 img_cultist = pygame.image.load(os.path.join(os.path.join('Images', 'Entities'), 'cultist.png')).convert_alpha()
+img_boss = pygame.image.load(os.path.join(os.path.join('Images', 'Entities'), 'Crystal_Wizard.png')).convert_alpha()
 img_weapons = []
 for file in os.listdir(os.path.join('Images', 'Staff')):
 	if os.path.isfile(os.path.join(os.path.join('Images', 'Staff'), file)):
@@ -147,6 +150,7 @@ CHEST = 6
 ENTERANCE = 7
 EXIT = 8
 ENEMY = 9
+BOSS = 10
 
 RANDOM = 99
 
@@ -177,6 +181,7 @@ class DungeonManager():
 		self.max_bounds = None
 		self.start_pos = None
 		self.end_pos = None
+		self.boss = None
 
 	def start_dungeon(self):
 		self.grid_positions.clear()
@@ -186,8 +191,10 @@ class DungeonManager():
 
 		self.BuildRandomPath()
 
-		print(self.grid_positions)
-
+	def start_boss(self):
+		self.grid_positions.clear()
+		self.BuildBossRoom()
+		#print(self.grid_positions)
 
 
 	def BuildEssentialPath(self):
@@ -258,6 +265,21 @@ class DungeonManager():
 					else:
 						self.grid_positions[f'{chamberTilePos[0]};{chamberTilePos[1]}'] = [[chamberTilePos[0], chamberTilePos[1]], EMPTY]
 
+	def BuildBossRoom(self):
+		chamberSize = random.randrange(25, 50)
+		chamberOrigin = [0,0]
+		self.start_pos = chamberOrigin
+		for x in range(chamberOrigin[0], chamberOrigin[0] + chamberSize):
+			for y in range(chamberOrigin[1], chamberOrigin[1] + chamberSize):
+				chamberTilePos = (x, y)
+				if f'{chamberTilePos[0]};{chamberTilePos[1]}' not in self.grid_positions and chamberTilePos[0] < self.max_bounds and chamberTilePos[0] > 0 and	chamberTilePos[1] < self.max_bounds and chamberTilePos[1] > 0:
+					if chamberTilePos[0] == chamberSize // 2 and chamberTilePos[1] == chamberSize // 2:
+						self.grid_positions[f'{chamberTilePos[0]};{chamberTilePos[1]}'] = [[chamberTilePos[0], chamberTilePos[1]], BOSS]
+					else:
+						self.grid_positions[f'{chamberTilePos[0]};{chamberTilePos[1]}'] = [[chamberTilePos[0], chamberTilePos[1]], EMPTY]
+
+
+
 class BoardManager():
 	def __init__(self):
 		self.collumns = 10
@@ -270,6 +292,7 @@ class BoardManager():
 		self.draw_dungeon = False
 		self.grid_positions = {}
 		self.dungeon_grid_positions = {}
+		self.boss_grid_positions = {}
 
 
 	def setup(self):
@@ -308,10 +331,24 @@ class BoardManager():
 		for tile in dungeon_tiles:
 			self.dungeon_grid_positions[tile] = dungeon_tiles[tile]
 
-		self.dungeon_grid_positions[f'{end_pos[0]};{end_pos[1]}'] = [[end_pos[0], end_pos[1]], EXIT]
+		self.dungeon_grid_positions[f'{end_pos[0]};{end_pos[1]}'] = [[end_pos[0], end_pos[1]], ENTERANCE]
 		self.draw_world = False
 		self.draw_dungeon = True
 	
+	def setBossBoard(self, dungeon_tiles, bound):
+		for tile in dungeon_tiles:
+			for x in range(dungeon_tiles[tile][0][0] - 1, dungeon_tiles[tile][0][0] + 2):
+				for y in range(dungeon_tiles[tile][0][1] - 1, dungeon_tiles[tile][0][1] + 2):
+					if f'{x};{y}' not in dungeon_tiles:
+						self.boss_grid_positions[f'{x};{y}'] = [[x, y], OUTERWALL]
+
+		
+		for tile in dungeon_tiles:
+			self.boss_grid_positions[tile] = dungeon_tiles[tile]
+
+		self.draw_world = False
+		self.draw_dungeon = False
+
 	def setWorldBoard(self):
 		self.dungeon_grid_positions.clear()
 		self.draw_world = True
@@ -323,11 +360,13 @@ class GameManager():
 		self.bm.setup()
 		self.dm = DungeonManager()
 
-
-
 	def enterDungeon(self):
 		self.dm.start_dungeon()
 		self.bm.setDungeonBoard(self.dm.grid_positions, self.dm.max_bounds, self.dm.end_pos)
+
+	def enterBossRoom(self):
+		self.dm.start_boss()
+		self.bm.setBossBoard(self.dm.grid_positions, self.dm.max_bounds)
 
 	def exitDungeon(self):
 		self.bm.setWorldBoard()
@@ -544,7 +583,13 @@ def main():
 					entity_list.empty()
 					entity_list.add(player)
 					player.rect.center = (gm.dm.start_pos[0] * 64 + 32, gm.dm.start_pos[1] * 64 + 32)
-
+				elif gm.bm.draw_dungeon:
+					chests.empty()
+					weapon_pickups.empty()
+					entity_list.empty()
+					entity_list.add(player)
+					gm.enterBossRoom()
+					player.rect.center = (gm.dm.start_pos[0] * 64 + 96, gm.dm.start_pos[1] * 64 + 96)
 				else:
 					gm.exitDungeon()
 					chests.empty()
@@ -602,7 +647,8 @@ def main():
 							gm.bm.grid_positions[tile] = [pos, EMPTY]
 
 
-			else:
+			elif gm.bm.draw_dungeon:
+				
 				for tile in gm.bm.dungeon_grid_positions:	
 					pos = gm.bm.dungeon_grid_positions[tile][0]
 					if pos[0] * 64 > camera.pos[0] - 128 and pos[0] * 64 < camera.pos[0] + camera.size[0] + 128 and pos[1] * 64 > camera.pos[1] - 128 and pos[1] * 64 < camera.pos[1] + camera.size[1] + 128:			
@@ -610,7 +656,7 @@ def main():
 						#print(gm.bm.dungeon_grid_positions[tile])
 						if temp_tiles[tile] == EMPTY:
 							#print('here')
-							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_poasitions[tile][0][1] * 64 - camera.pos[1]))
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
 						elif temp_tiles[tile] == WALL:
 							window.blit(pygame.transform.scale(img_wall, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
 							temp_tiles_rects.append(pygame.Rect((gm.bm.dungeon_grid_positions[tile][0][0] * 64, gm.bm.dungeon_grid_positions[tile][0][1] * 64), (64, 64)))
@@ -632,11 +678,41 @@ def main():
 							else:
 								entity_list.add(entities.Ranged_Enemy((gm.bm.dungeon_grid_positions[tile][0][0] * 64 + 32, gm.bm.dungeon_grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 600, None, 1, 1000, img_bullets[1], img_weapons[0])))
 							gm.bm.dungeon_grid_positions[tile] = [pos, EMPTY]
-						elif temp_tiles[tile] == EXIT:
-							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
-							door_ways.add(entities.DoorWay((gm.bm.dungeon_grid_positions[tile][0][0] * 64 + 32, gm.bm.dungeon_grid_positions[tile][0][1] * 64 + 32), img_exit, (64, 64)))
+						elif temp_tiles[tile] == ENTERANCE:
+							window.blit(pygame.transform.scasle(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							door_ways.add(entities.DoorWay((gm.bm.dungeon_grid_positions[tile][0][0] * 64 + 32, gm.bm.dungeon_grid_positions[tile][0][1] * 64 + 32),  img_enterance, (64, 64)))
 
-				#print(len(temp_tiles_rects))
+			else:
+				
+				for tile in gm.bm.boss_grid_positions:	
+					pos = gm.bm.boss_grid_positions[tile][0]
+					if pos[0] * 64 > camera.pos[0] - 128 and pos[0] * 64 < camera.pos[0] + camera.size[0] + 128 and pos[1] * 64 > camera.pos[1] - 128 and pos[1] * 64 < camera.pos[1] + camera.size[1] + 128:			
+						temp_tiles[tile] = gm.bm.boss_grid_positions[tile][1]						
+						if temp_tiles[tile] == EMPTY:							
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.boss_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.boss_grid_positions[tile][0][1] * 64 - camera.pos[1]))
+						elif temp_tiles[tile] == WALL:
+							window.blit(pygame.transform.scale(img_wall, (64, 64)), (gm.bm.boss_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.boss_grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							temp_tiles_rects.append(pygame.Rect((gm.bm.boss_grid_positions[tile][0][0] * 64, gm.bm.boss_grid_positions[tile][0][1] * 64), (64, 64)))
+						elif temp_tiles[tile] == OUTERWALL:
+							window.blit(pygame.transform.scale(img_wall, (64, 64)), (gm.bm.boss_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.boss_grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							temp_tiles_rects.append(pygame.Rect((gm.bm.boss_grid_positions[tile][0][0] * 64, gm.bm.boss_grid_positions[tile][0][1] * 64), (64, 64)))
+						elif temp_tiles[tile] == BOSS:
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.boss_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.boss_grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							gm.dm.boss = entities.Boss((gm.bm.boss_grid_positions[tile][0][0] * 64 + 32, gm.bm.boss_grid_positions[tile][0][1] * 64 + 32), img_boss, (64,64), player, [0, 1, 2, 3, 4], img_boss_projectile)
+							entity_list.add(gm.dm.boss)
+							gm.bm.boss_grid_positions[tile] = [pos, EMPTY]
+						elif temp_tiles[tile] == EXIT:
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.boss_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.boss_grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							door_ways.add(entities.DoorWay((gm.bm.boss_grid_positions[tile][0][0] * 64 + 32, gm.bm.boss_grid_positions[tile][0][1] * 64 + 32),  img_exit, (64, 64)))
+
+				if gm.dm.boss:
+					
+					if not gm.dm.boss.alive:
+						
+						gm.bm.boss_grid_positions[f'{25};{25}'] = [pos, EXIT]
+						gm.dm.boss = None
+
+
 	
 			
 			
