@@ -8,13 +8,15 @@ from pygame.locals import *
 pygame.init()
 
 font = pygame.font.SysFont('Courier New', 30)
+info_font = pygame.font.SysFont('Courier New', 15)
 
 COL_DEBUG = (255, 0, 255)
 scale = 1
 width = 1000
 height = 1000
+monitor_size = [pygame.display.Info().current_w, pygame.display.Info().current_h]
 camera = entities.Camera((width, height))
-screen = pygame.display.set_mode((int(width * scale), int(height * scale)))
+screen = pygame.display.set_mode((int(width * scale), int(height * scale)), RESIZABLE)
 window = pygame.Surface((width, height))
 
 
@@ -48,9 +50,17 @@ for file in os.listdir(os.path.join('Images', 'Staff')):
 img_enterance = pygame.image.load(os.path.join('Images', 'DungeonEnterance.png')).convert_alpha()
 img_exit = pygame.image.load(os.path.join('Images', 'DungeonExit.png')).convert_alpha()
 img_play_button = pygame.image.load(os.path.join(os.path.join('Images', 'UI'), 'play_button.png')).convert_alpha()
+img_settings_button = pygame.image.load(os.path.join(os.path.join('Images', 'UI'), 'settings_button.png')).convert_alpha()
+img_main_menu_button = pygame.image.load(os.path.join(os.path.join('Images', 'UI'), 'main_menu_button.png')).convert_alpha()
+img_fullscreen_button = pygame.image.load(os.path.join(os.path.join('Images', 'UI'), 'fullscreen_button.png')).convert_alpha()
+img_SD_button = pygame.image.load(os.path.join(os.path.join('Images', 'UI'), 'SD_button.png')).convert_alpha()
+img_HD_button = pygame.image.load(os.path.join(os.path.join('Images', 'UI'), 'HD_button.png')).convert_alpha()
+img_FHD_button = pygame.image.load(os.path.join(os.path.join('Images', 'UI'), 'FHD_button.png')).convert_alpha()
 img_chest_open = pygame.image.load(os.path.join('Images', 'Chest_open.png')).convert_alpha()
 img_chest_closed = pygame.image.load(os.path.join('Images', 'Chest_closed.png')).convert_alpha()
 img_health_pickup = pygame.image.load(os.path.join('Images', 'Health_Pickup.png')).convert_alpha()
+img_title = pygame.image.load(os.path.join(os.path.join('Images', 'UI'), 'Title_img.png')).convert_alpha()
+
 
 tile_index = {1 : img_wall}
 
@@ -257,6 +267,7 @@ class BoardManager():
 		self.floorTiles = []
 		self.wallTiles = []
 		self.draw_world = True
+		self.draw_dungeon = False
 		self.grid_positions = {}
 		self.dungeon_grid_positions = {}
 
@@ -299,10 +310,12 @@ class BoardManager():
 
 		self.dungeon_grid_positions[f'{end_pos[0]};{end_pos[1]}'] = [[end_pos[0], end_pos[1]], EXIT]
 		self.draw_world = False
+		self.draw_dungeon = True
 	
 	def setWorldBoard(self):
 		self.dungeon_grid_positions.clear()
 		self.draw_world = True
+		self.draw_dungeon = False
 
 class GameManager():
 	def __init__(self):
@@ -355,33 +368,69 @@ def restart():
 	entity_list.add(player)
 	#print('here')
 
+play_button = ui.Button(200, 300, (200, 100), (255, 255, 255), img_play_button)
+setting_button = ui.Button(200, 500, (200, 100), (255, 255, 255), img_settings_button)
+fullscreen_button = ui.Button(200, 300, (200, 100), (255, 255, 255), img_fullscreen_button)
+SD_button =  ui.Button(200, 450, (200, 100), (255, 255, 255), img_SD_button)
+HD_button = ui.Button(200, 600, (200, 100), (255, 255, 255), img_HD_button)
+FHD_button = ui.Button(200, 750, (200, 100), (255, 255, 255), img_FHD_button)
+main_menu_button =  ui.Button(200, 150, (200, 100), (255, 255, 255), img_main_menu_button)
+
+dash_bar = ui.progress_bar((window.get_width() - 125, window.get_height() - 100), (100, 25), 1)
+mana_bar = ui.progress_bar((125, window.get_height() - 100), (100, 25), 1)
+mana_bar.set_color_main((10, 10, 255))
+mana_bar.set_color_background((10, 10, 10))
+health_bar = ui.progress_bar((125, window.get_height() - 50), (100, 25), 1)
+health_bar.set_color_main((255, 10, 10))
+health_bar.set_color_background((10, 10, 10))
+
+
+def resize_ui_elements():
+	main_menu_button.x = 200 
+	main_menu_button.y = 150
+	fullscreen_button.x = 200 
+	fullscreen_button.y = 300
+	SD_button.x = 450
+	SD_button.y = 300 
+	HD_button.x = 200 
+	HD_button.y = 450
+	FHD_button.x = 450
+	FHD_button.y = 450 
+	play_button.x = 200
+	play_button.y = 300
+	setting_button.x = 200 
+	setting_button.y = 500
+	dash_bar.set_pos((window.get_width() - 125, window.get_height() - 100))
+	mana_bar.set_pos((200, window.get_height() - 100))
+	health_bar.set_pos((200, window.get_height() - 50))
+	camera.resize([window.get_width(), window.get_height()])
+
 
 def main():
+	global window, screen
 
 	
-
+	fullscreen = False
 	
-	
+	resize_ui_elements()
 	
 
 	#weapon_pickups.add(entities.WeaponPickup([200, 400], img_weapons[1], img_weapons[1].get_size(),
 	#	 entities.Weapon(1, 500, None, 11, 3, img_bullets[0], img_weapons[1], 5)))
 
-	dash_bar = ui.progress_bar((window.get_width() - 125, window.get_height() - 100), (100, 25), 1)
-	mana_bar = ui.progress_bar((125, window.get_height() - 100), (100, 25), 1)
-	mana_bar.set_color_main((10, 10, 255))
-	mana_bar.set_color_background((10, 10, 10))
-	health_bar = ui.progress_bar((125, window.get_height() - 50), (100, 25), 1)
-	health_bar.set_color_main((255, 10, 10))
-	health_bar.set_color_background((10, 10, 10))
+
 
 	scene = 0
+	to_scene = 0
 
 	clock = pygame.time.Clock()
 
 	run = True
 
-	play_button = ui.Button(200, 300, (200, 100), (255, 255, 255), img_play_button)
+
+	draw_pickup_text = False
+	pickup_info = None
+
 	scene_transition_timer_start = False
 	scene_transition_timer_start_time = 0
 
@@ -407,7 +456,7 @@ def main():
 
 			
 
-			draw_text("Main Menu", font, (255, 255, 255), (200, 200))
+			window.blit(img_title, (350 - img_title.get_width() // 2, 50))
 			draw_text('Controls', font, (255,255,255), (750, 200), True)
 			draw_text('LMB : Shoot', font, (255,255,255), (750, 250), True)
 			draw_text('WASD : Move', font, (255,255,255), (750, 300), True)
@@ -418,16 +467,20 @@ def main():
 				if not scene_transition_timer_start:
 					scene_transition_timer_start_time = pygame.time.get_ticks()
 				scene_transition_timer_start = True
+				to_scene = 1
 
-				
-				#scene = 1
-				
+			if setting_button.draw(window):
+				if not scene_transition_timer_start:
+					scene_transition_timer_start_time = pygame.time.get_ticks()
+				scene_transition_timer_start = True
+				to_scene = 2
+			
 
 			for p in particles:
 				camera.render(p, window, BLEND_RGBA_ADD)
 
-			if scene_transition_timer_start and pygame.time.get_ticks() > scene_transition_timer_start_time + 1000:
-				scene = 1
+			if scene_transition_timer_start and pygame.time.get_ticks() > scene_transition_timer_start_time + 500:
+				scene = to_scene
 				scene_transition_timer_start = False
 
 		elif scene == 1:
@@ -435,11 +488,25 @@ def main():
 				if event.type == QUIT:
 					run = False
 
+				if event.type == VIDEORESIZE:
+					if not fullscreen:
+						screen = pygame.display.set_mode((event.w, event.h), RESIZABLE)
+						window = pygame.Surface((event.w, event.h))
+					resize_ui_elements()
 
 				if event.type == MOUSEBUTTONDOWN:
 					if event.button == 1:
-						pass
-					
+						player_wants_to_attack = True
+						for pickup in weapon_pickups:
+							if pickup.rect.collidepoint(get_mouse_pos()):
+								pickup_info = pickup
+								player_wants_to_attack = False
+
+						if player_wants_to_attack:
+							draw_pickup_text = False
+							pickup_info = None
+						else:
+							draw_pickup_text = True
 
 				if event.type == KEYDOWN:
 					if event.key == K_w:
@@ -465,7 +532,8 @@ def main():
 						player.moving[3] = False
 
 			if pygame.mouse.get_pressed()[0]:
-				player.attack(get_mouse_pos(), projectiles)
+				if player_wants_to_attack:
+					player.attack(get_mouse_pos(), projectiles)
 
 			if player.dungeon_transition == True:
 				player.dungeon_transition = False
@@ -528,9 +596,9 @@ def main():
 						elif temp_tiles[tile] == ENEMY:
 							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.grid_positions[tile][0][1] * 64 - camera.pos[1]))
 							if random.randrange(0, 2) == 1:
-								entity_list.add(entities.Melee_Enemy((gm.bm.grid_positions[tile][0][0] * 64, gm.bm.grid_positions[tile][0][1] * 64), img_cultist, player_ref = player, weapon = entities.Weapon(1, 250, None, 5, 300, img_bullets[0], img_weapons[0])))
+								entity_list.add(entities.Melee_Enemy((gm.bm.grid_positions[tile][0][0] * 64 + 32, gm.bm.grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 250, None, 5, 300, img_bullets[0], img_weapons[0])))
 							else:
-								entity_list.add(entities.Ranged_Enemy((gm.bm.grid_positions[tile][0][0] * 64, gm.bm.grid_positions[tile][0][1] * 64), img_cultist, player_ref = player, weapon = entities.Weapon(1, 600, None, 1, 1000, img_bullets[1], img_weapons[0])))
+								entity_list.add(entities.Ranged_Enemy((gm.bm.grid_positions[tile][0][0] * 64 + 32, gm.bm.grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 600, None, 1, 1000, img_bullets[1], img_weapons[0])))
 							gm.bm.grid_positions[tile] = [pos, EMPTY]
 
 
@@ -542,7 +610,7 @@ def main():
 						#print(gm.bm.dungeon_grid_positions[tile])
 						if temp_tiles[tile] == EMPTY:
 							#print('here')
-							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
+							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_poasitions[tile][0][1] * 64 - camera.pos[1]))
 						elif temp_tiles[tile] == WALL:
 							window.blit(pygame.transform.scale(img_wall, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
 							temp_tiles_rects.append(pygame.Rect((gm.bm.dungeon_grid_positions[tile][0][0] * 64, gm.bm.dungeon_grid_positions[tile][0][1] * 64), (64, 64)))
@@ -560,9 +628,9 @@ def main():
 							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
 							
 							if random.randrange(0,2) == 1:
-								entity_list.add(entities.Melee_Enemy((gm.bm.dungeon_grid_positions[tile][0][0] * 64, gm.bm.dungeon_grid_positions[tile][0][1] * 64), img_cultist, player_ref = player, weapon = entities.Weapon(1, 250, None, 5, 300, img_bullets[0], img_weapons[0])))
+								entity_list.add(entities.Melee_Enemy((gm.bm.dungeon_grid_positions[tile][0][0] * 64 + 32, gm.bm.dungeon_grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 250, None, 5, 300, img_bullets[0], img_weapons[0])))
 							else:
-								entity_list.add(entities.Ranged_Enemy((gm.bm.dungeon_grid_positions[tile][0][0] * 64, gm.bm.dungeon_grid_positions[tile][0][1] * 64), img_cultist, player_ref = player, weapon = entities.Weapon(1, 600, None, 1, 1000, img_bullets[1], img_weapons[0])))
+								entity_list.add(entities.Ranged_Enemy((gm.bm.dungeon_grid_positions[tile][0][0] * 64 + 32, gm.bm.dungeon_grid_positions[tile][0][1] * 64 + 32), img_cultist, player_ref = player, weapon = entities.Weapon(1, 600, None, 1, 1000, img_bullets[1], img_weapons[0])))
 							gm.bm.dungeon_grid_positions[tile] = [pos, EMPTY]
 						elif temp_tiles[tile] == EXIT:
 							window.blit(pygame.transform.scale(img_floor, (64, 64)), (gm.bm.dungeon_grid_positions[tile][0][0] * 64 - camera.pos[0], gm.bm.dungeon_grid_positions[tile][0][1] * 64 - camera.pos[1]))
@@ -655,7 +723,16 @@ def main():
 			mana_bar.draw(window)
 			health_bar.draw(window)
 
-			
+
+
+			if draw_pickup_text:
+				if pickup_info.enabled:
+					pygame.draw.line(window, (255,255,255), (pickup_info.rect.topright[0] - camera.pos[0], pickup_info.rect.topright[1] - camera.pos[1]), (pickup_info.rect.topright[0] - camera.pos[0] + 50, pickup_info.rect.topright[1] - camera.pos[1] - 25))
+					pygame.draw.line(window, (255,255,255), (pickup_info.rect.topright[0] - camera.pos[0] + 50, pickup_info.rect.topright[1] - camera.pos[1] - 25), (pickup_info.rect.topright[0] - camera.pos[0] + 200, pickup_info.rect.topright[1] - camera.pos[1] - 25))
+					draw_text(f'{pickup_info.name}', info_font, (255, 255, 255), (pickup_info.rect.topright[0] - camera.pos[0] + 50, pickup_info.rect.topright[1] - camera.pos[1] - 50))
+					for i in range(len(pickup_info.text.split(', '))):
+						draw_text(str(pickup_info.text.split(', ')[i]), info_font, (255, 255, 255), (pickup_info.rect.topright[0] - camera.pos[0] + 50, pickup_info.rect.topright[1] - camera.pos[1] + i * 20 - 20))
+					
 
 			if not player.alive:
 				draw_text('Game Over', font, (255,255,255), (window.get_width() // 2, window.get_height() // 2), True)
@@ -673,7 +750,58 @@ def main():
 			#if len(enemy_list) == 0:
 			#	draw_text('Level Complete', font, (255,255,255), (window.get_width() // 2, window.get_height() // 2), True)
 
+		elif scene == 2:
+			for event in pygame.event.get():
+				if event.type == QUIT:
+					run = False
 
+				if event.type == MOUSEBUTTONDOWN:
+					if event.button == 1:
+						for i in range(10):
+							offset = [random.randrange(-10, 10), random.randrange(-10, 10)]
+							particles.add(entities.Particles([pygame.mouse.get_pos()[0] + offset[0], pygame.mouse.get_pos()[1] + offset[1]], [0,0], [0,0], 500))
+
+				if event.type == VIDEORESIZE:
+					resize_ui_elements()
+
+					if not fullscreen:
+						screen = pygame.display.set_mode((event.w, event.h), RESIZABLE)
+						window = pygame.Surface((event.w, event.h))
+
+			if main_menu_button.draw(window):
+				if not scene_transition_timer_start:
+					scene_transition_timer_start_time = pygame.time.get_ticks()
+				scene_transition_timer_start = True
+				to_scene = 0
+
+			if fullscreen_button.draw(window):
+				fullscreen = not fullscreen
+				if fullscreen:
+					window = pygame.Surface(monitor_size)
+					screen = pygame.display.set_mode(monitor_size, FULLSCREEN)
+				else:
+					screen = pygame.display.set_mode((screen.get_width(), screen.get_height()), RESIZABLE)
+					window = pygame.Surface((screen.get_width(), screen.get_height()))
+
+
+			if SD_button.draw(window):
+				screen = pygame.display.set_mode((640, 480))
+				window = pygame.Surface((640, 480))
+				resize_ui_elements()
+			if HD_button.draw(window):
+				screen = pygame.display.set_mode((1280, 720))
+				window = pygame.Surface((1280, 720))
+				resize_ui_elements()
+			if FHD_button.draw(window):
+				screen = pygame.display.set_mode((1920, 1080))
+				window = pygame.Surface((1920, 1080))
+				resize_ui_elements()
+
+
+
+			if scene_transition_timer_start and pygame.time.get_ticks() > scene_transition_timer_start_time + 500:
+				scene = to_scene
+				scene_transition_timer_start = False
 
 		screen.blit(pygame.transform.scale(window, (screen.get_width(), screen.get_height())), (0,0))
 		pygame.display.update()

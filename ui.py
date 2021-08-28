@@ -16,6 +16,10 @@ class progress_bar ():
 		self.r1 = pygame.Rect((0,0), (self.size[0] * v, self.size[1]))
 		self.r2 = pygame.Rect((0, 0), (self.size[0], self.size[1]))
 
+	def set_pos(self, pos):
+		self.pos = pos 
+		
+
 	def set_color_main(self, color):
 		self.col_1 = color 
 	def set_color_background(self, color):

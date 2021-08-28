@@ -33,6 +33,11 @@ class Camera():
 		self.renderRect = pygame.Rect(self.pos, (size[0] + 100, size[1] + 100))
 		self.loaderRect = pygame.Rect((self.pos[0] - size[0], self.pos[1] - size[1]), (size[0] * 3, size[1] * 3))
 
+	def resize(self, size):
+		self.size = size
+		self.renderRect = pygame.Rect(self.pos, (size[0] + 100, size[1] + 100))
+		self.loaderRect = pygame.Rect((self.pos[0] - size[0], self.pos[1] - size[1]), (size[0] * 3, size[1] * 3))
+
 	def move(self, v):
 		self.pos[0] += v[0]
 		self.pos[1] += v[1]
@@ -596,6 +601,23 @@ class Ranged_Enemy(Enemy):
 		if dist_to_player < 360000:
 			self.attack(self.player_ref.rect.center, args[2])
 
+class Boss(Enemy):
+	def __init__(self, pos, img = None, size = (32, 32), player_ref = None, patterns = None):
+		super().__init__(pos, img, size, player_ref)
+		self.speed = 1
+		self.health = 100
+		self.patterns = patterns
+
+	def update(self, *args):
+		super().update(args[0], args[1], args[2], args[3])
+
+		self.image = pygame.transform.rotate(self.img, get_angle_to_pos(self.rect.topleft, self.player_ref.rect.center) + 90)
+
+		for m in range(len(self.moving)):
+			self.moving[m] = False
+
+		dist_to_player = distSqr(self.player_ref.rect.center, self.rect.center)
+
 
 class Projectile(Entity):
 	def __init__(self, pos, img = None, size = (8, 8), angle = 0, dist = 10):
@@ -837,8 +859,10 @@ class PickUp(pygame.sprite.Sprite):
 		self.pos = pos 
 		self.image = pygame.transform.scale(img, (size)) 
 		self.size = size
-		self.rect = pygame.Rect(self.pos, self.size)
+		self.rect = pygame.Rect([self.pos[0] - self.size[0] // 2, self.pos[1] - self.size[1] // 2], self.size)
 		self.enabled = True
+		self.name = 'Pickup'
+		self.text = 'A Pickup'
 
 	def update(self, *args):
 		if self.enabled:
@@ -857,6 +881,8 @@ class HealthPickup(PickUp):
 	def __init__(self, pos, img, size):
 		super().__init__(pos, img, size)
 		self.heal_amount = random.randrange(5, 10)
+		self.name = 'Health Pack'
+		self.text = f'Heal for :{self.heal_amount}'
 
 
 	def update(self, *args):
@@ -869,6 +895,7 @@ class HealthPickup(PickUp):
 				for i in range(10):
 					offset = [random.randrange(-20, 20), random.randrange(-20, 20)]
 					args[2].add(Particles([self.rect.topleft[0] + offset[0], self.rect.topleft[1] + offset[1]], [0,0], [0,0], 500, (255, 255, 0)))
+				self.enabled = False
 				self.kill()
 			elif isinstance(args[0], Entity):
 				
@@ -883,6 +910,8 @@ class WeaponPickup(PickUp):
 	def __init__(self, pos, img, size, weapon):
 		super().__init__(pos, img, size)
 		self.weapon = weapon
+		self.name = 'Weapon Pickup'
+		self.text = f'D : {self.weapon.damage} P : {self.weapon.projectiles_per_attack}, R : {self.weapon.range} CD : {self.weapon.cooldown}, MC : {self.weapon.mana_cost}'
 		
 	def update(self, *args):
 
@@ -895,8 +924,8 @@ class WeaponPickup(PickUp):
 					offset = [random.randrange(-20, 20), random.randrange(-20, 20)]
 					args[2].add(Particles([self.rect.topleft[0] + offset[0], self.rect.topleft[1] + offset[1]], [0,0], [0,0], 500, (255, 255, 0)))
 				self.kill()
-			elif isinstance(args[0], Entity):
-				
+				self.enabled = False
+			elif isinstance(args[0], Entity):				
 				args[0].pickup(self.weapon, args[3])
 				self.enabled = False
 				self.kill()
