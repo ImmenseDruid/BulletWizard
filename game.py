@@ -1,5 +1,5 @@
 import pygame, entities, ui
-import math, random, time
+import math, random, time, pickle
 import numpy as np
 import os
 from pygame.locals import *
@@ -20,6 +20,10 @@ screen = pygame.display.set_mode((int(width * scale), int(height * scale)), RESI
 window = pygame.Surface((width, height))
 button_window = pygame.Surface((screen.get_width(), screen.get_height()))
 
+with open('settings_data.p', 'rb') as file:
+	settings = pickle.load(file)
+sfx_volume = settings[0]
+music_volume = settings[1]
 
 
 def draw_text(text, font, color, pos, centered = False):
@@ -390,6 +394,11 @@ SD_button =  ui.Button(200, 450, (200, 100), (255, 255, 255), img_SD_button)
 HD_button = ui.Button(200, 600, (200, 100), (255, 255, 255), img_HD_button)
 FHD_button = ui.Button(200, 750, (200, 100), (255, 255, 255), img_FHD_button)
 main_menu_button =  ui.Button(200, 150, (200, 100), (255, 255, 255), img_main_menu_button)
+upmusic_button = ui.Button(300, 400, (200, 100), (255, 255, 255), font.render('Music Vol up', True, (255,255,255)))
+downmusic_button = ui.Button(600, 400, (200, 100), (255, 255, 255), font.render('Music Vol down', True, (255,255,255)))
+upsfx_button = ui.Button(300, 500, (200, 100), (255, 255, 255), font.render('SFX Vol up', True, (255,255,255)))
+downsfx_button = ui.Button(600, 500, (200, 100), (255, 255, 255), font.render('SFX Vol down', True, (255,255,255)))
+save_button = ui.Button(300, 750, (200, 100), (255, 255, 255), font.render('save', True, (255,255,255)))
 
 dash_bar = ui.progress_bar((window.get_width() - 125, window.get_height() - 100), (100, 25), 1)
 mana_bar = ui.progress_bar((125, window.get_height() - 100), (100, 25), 1)
@@ -416,10 +425,22 @@ def resize_ui_elements():
 	HD_button.y = 450
 	FHD_button.x = screen.get_width() // 10 * 4
 	FHD_button.y = 450 
+	upmusic_button.x  =  screen.get_width() // 10 * 1
+	downmusic_button.x  =  screen.get_width() // 10 * 4
+	upsfx_button.x  =  screen.get_width() // 10 * 1
+	downsfx_button.x  =  screen.get_width() // 10 * 4 
+	save_button.x =  screen.get_width() // 10 * 1
+	upmusic_button.y  =  600
+	downmusic_button.y  =  600
+	upsfx_button.y  = 700
+	downsfx_button.y =  700
+	save_button.y =  800
+
 	play_button.x = screen.get_width() // 10 
 	play_button.y = screen.get_width() // 10 + 200
 	setting_button.x = screen.get_width() // 10 
 	setting_button.y = screen.get_width() // 10 + 400
+
 	dash_bar.set_pos((window.get_width() - 125, window.get_height() - 100))
 	mana_bar.set_pos((200, window.get_height() - 100))
 	health_bar.set_pos((200, window.get_height() - 50))
@@ -463,6 +484,7 @@ def main():
 	pygame.display.set_icon(img_icon)
 	pos = [0,0]
 	while run:
+		global sfx_volume, music_volume
 		window.fill((20,20,20))
 		button_window.fill((0,0,0))
 		button_window.set_colorkey((0,0,0))
@@ -539,6 +561,8 @@ def main():
 			draw_text('WASD : Move', font, (255,255,255), (750, 300), True)
 			draw_text('Q : Drop', font, (255,255,255), (750, 350), True)
 			draw_text('SPACE : Dash', font, (255,255,255), (750, 400), True)
+			draw_text('Click on a weapon to', font, (255,255,255), (750, 500), True)
+			draw_text('see its stats', font, (255,255,255), (750, 550), True)
 			
 			if play_button.draw(button_window):
 				if not scene_transition_timer_start:
@@ -617,6 +641,7 @@ def main():
 			if pygame.mouse.get_pressed()[0]:
 				if player_wants_to_attack:
 					player.attack(get_mouse_pos(), projectiles)
+					camera.pos = (camera.pos[0] + random.randrange(0, 5) - 2, camera.pos[1] + random.randrange(0, 5) - 2)
 					for i in range(1):
 						offset = [random.randrange(-20, 20), random.randrange(-20, 20)]
 						particles.add(entities.Particles([200 + mana_bar.r1.size[0] + offset[0] + camera.pos[0], window.get_height() - 100 + offset[1] + camera.pos[1]], [0,0], [0,0], 500, (0, 0, 255)))
@@ -987,6 +1012,44 @@ def main():
 					screen = pygame.display.set_mode((screen.get_width(), screen.get_height()), RESIZABLE)
 					window = pygame.Surface((screen.get_width(), screen.get_height()))
 				resize_ui_elements()
+
+			dx = 0.1
+			func = lambda a, d: a
+			if upmusic_button.draw(button_window):
+				music_volume += dx
+				if music_volume > 1:
+					music_volume = 1
+				music_volume = func(music_volume, dx)
+
+			if downmusic_button.draw(button_window):
+				music_volume -= dx
+				if music_volume < 0:
+					music_volume = 0
+				music_volume = func(music_volume, dx)
+
+			if upsfx_button.draw(button_window):
+				sfx_volume += dx
+				if sfx_volume > 1:
+					sfx_volume = 1
+				sfx_volume = func(sfx_volume, dx)
+
+			if downsfx_button.draw(button_window):
+				sfx_volume -= dx
+				if sfx_volume < 0:
+					sfx_volume = 0
+				sfx_volume = func(sfx_volume, dx)
+
+			if save_button.draw(button_window):
+
+				pygame.mixer.music.set_volume(music_volume)
+				sfx_shoot.set_volume(sfx_volume)
+				sfx_hit.set_volume(sfx_volume)
+				sfx_randomize.set_volume(sfx_volume)
+				settings = [music_volume, sfx_volume]
+				with open( f'settings_data.p', 'wb') as file:
+					pickle.dump(settings, file)
+
+				
 
 
 			if SD_button.draw(button_window):

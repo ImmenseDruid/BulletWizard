@@ -634,22 +634,22 @@ class Boss(Enemy):
 				angle = angle + self.angle_offset
 				self.angle_offset += 5
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 			elif self.pattern == self.ANTI_SPIRAL:
 				self.fire_cooldown = 100
 				angle = angle + self.angle_offset
 				self.angle_offset += 5
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 			elif self.pattern == self.TWIN_SPIRALS:
 				self.fire_cooldown = 250
 				angle = angle + self.angle_offset
 				self.angle_offset += 5
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 				angle = angle - 2 * self.angle_offset
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 			elif self.pattern == self.CIRCLE:
 				self.fire_cooldown = 3000
 				self.angle_offset = random.randrange(0, 360)
@@ -657,31 +657,31 @@ class Boss(Enemy):
 				for i in range(35):
 					angle = math.radians(start_angle + i * 10 + self.angle_offset)				
 					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
+					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
 			elif self.pattern == self.DOUBLE_SPIRAL:
 				self.fire_cooldown = 250
 				angle = angle + self.angle_offset
 				self.angle_offset += 5
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 				angle = angle + 180
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 			elif self.pattern == self.QUAD_SPIRAL:
 				self.fire_cooldown = 250
 				angle = angle + self.angle_offset
 				self.angle_offset += 5
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 				angle = angle + 90
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 				angle = angle + 180
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 				angle = angle + 270
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
+				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 			elif self.pattern == self.LASERS:
 				self.fire_cooldown = 250
 				self.angle_offset += 10
@@ -689,7 +689,7 @@ class Boss(Enemy):
 				for i in range(5):
 					angle = math.radians(start_angle + i * 72+ self.angle_offset)				
 					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
+					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
 			elif self.pattern == self.SEMICIRCLE:
 				self.fire_cooldown = 3000
 				self.angle_offset = -90
@@ -697,7 +697,7 @@ class Boss(Enemy):
 				for i in range(18):
 					angle = math.radians(start_angle + i * 10 + self.angle_offset)				
 					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
-					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
+					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
 
 
 	def damage(self, amount):
