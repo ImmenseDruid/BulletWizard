@@ -1,5 +1,7 @@
-import pygame, math, random
+import pygame, math, random, os
 import numpy as np
+
+pygame.mixer.init()
 
 def distSqr(p1, p2):
 	return ((p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1]))
@@ -62,46 +64,6 @@ class Camera():
 			entity.enabled = False
 	
 
-
-# class Static_Entity(pygame.sprite.Sprite):
-# 	def __init__(self, pos, img = None, size = (32, 32)):
-# 		pygame.sprite.Sprite.__init__(self)
-
-# 		if not img:
-# 			img = pygame.Surface(size)
-# 			pygame.draw.rect(img, (0, 0, 255), ((0,0), size))
-
-# 		img = pygame.transform.scale(img, size)
-
-# 		self.pos = pos
-# 		self.image = img
-# 		self.size = size
-# 		self.rect = pygame.Rect(pos, self.size)
-# 		self.enabled = True
-
-# 	def collide(self, entity):
-# 		pass
-
-
-# 	def draw(self, screen, camera):
-# 		screen.blit(self.image, (self.rect.x - camera.pos[0], self.rect.y - camera.pos[1]))
-
-# class Wall(Static_Entity):
-# 	def __init__(self, pos, img = None, size = (32, 32)):
-# 		super().__init__(pos, img, size)
-
-# 	def collide(self, entity):
-# 		super().collide(entity)
-			
-
-# 	class Spiked_Wall(Static_Entity):
-# 		def __init__(self, pos, img = None, size = (32, 32)):
-# 			super().__init__(pos, img, size)
-
-# 		def collide(self, entity):
-# 			super().collide(entity)
-# 			entity.damage(1)
-
 class Entity(pygame.sprite.Sprite):
 	def __init__(self, pos, img = None, size = (32, 32)):
 		pygame.sprite.Sprite.__init__(self)
@@ -138,6 +100,11 @@ class Entity(pygame.sprite.Sprite):
 		self.last_dash = -2000
 
 		self.inventory = [None, None, None, None, None]
+
+		self.damage_sound =  pygame.mixer.Sound(os.path.join(os.path.join('Sounds', 'SFX'), 'Hit.wav'))
+		self.damage_sound.set_volume(0.1)
+		self.fire_sound =  pygame.mixer.Sound(os.path.join(os.path.join('Sounds', 'SFX'), 'Shoot.wav'))
+		self.fire_sound.set_volume(0.1)
 
 	def update(self, *args):
 		if self.enabled:
@@ -247,6 +214,8 @@ class Entity(pygame.sprite.Sprite):
 		if self.health <= 0:			
 			self.alive = False
 
+		self.damage_sound.play()
+
 	def attack(self, pos, projectiles):
 		if self.alive and self.enabled:
 			if self.weapon and self.mana > self.weapon.mana_cost:
@@ -262,6 +231,7 @@ class Entity(pygame.sprite.Sprite):
 					self.v[1] += -math.sin(force_angle) * force
 					self.mana = max(0, self.mana - self.weapon.mana_cost)
 					self.weapon.attack(pos, projectiles, angle)
+					self.fire_sound.play()
 
 	
 	def dash(self, particles):
@@ -615,11 +585,13 @@ class Boss(Enemy):
 	DOUBLE_SPIRAL = 5
 	QUAD_SPIRAL = 6
 	LASERS = 7
+	SEMICIRCLE = 8
 
-	def __init__(self, pos, img = None, size = (32, 32), player_ref = None, patterns = None, bullet_img = None):
+	def __init__(self, pos, img = None, size = (32, 32), player_ref = None, patterns = None, bullet_img = None, name = 'Crystal Wizard'):
 		super().__init__(pos, img, size, player_ref)
 		self.speed = 1
-		self.health = 100
+		self.max_health = 200
+		self.health = 200
 		self.patterns = patterns
 		self.pattern = self.patterns[0]
 		self.bullet_img = bullet_img
@@ -628,6 +600,7 @@ class Boss(Enemy):
 		self.angle_offset = 0
 		self.fired_last = 0
 		self.fire_cooldown = 100
+		self.name = name
 
 	def update(self, *args):
 		super().update(args[0], args[1], args[2], args[3])
@@ -679,9 +652,10 @@ class Boss(Enemy):
 				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
 			elif self.pattern == self.CIRCLE:
 				self.fire_cooldown = 3000
+				self.angle_offset = random.randrange(0, 360)
 				start_angle = angle			
 				for i in range(35):
-					angle = math.radians(start_angle + i * 10)				
+					angle = math.radians(start_angle + i * 10 + self.angle_offset)				
 					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
 					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
 			elif self.pattern == self.DOUBLE_SPIRAL:
@@ -716,6 +690,15 @@ class Boss(Enemy):
 					angle = math.radians(start_angle + i * 72+ self.angle_offset)				
 					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
 					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
+			elif self.pattern == self.SEMICIRCLE:
+				self.fire_cooldown = 3000
+				self.angle_offset = -90
+				start_angle = angle			
+				for i in range(18):
+					angle = math.radians(start_angle + i * 10 + self.angle_offset)				
+					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
+					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 1))
+
 
 	def damage(self, amount):
 		self.health -= amount
@@ -737,9 +720,10 @@ class Projectile(Entity):
 		self.speed = speed
 		self.range = dist
 		#TODO : fix this for some reason 500 range == 300 in game dont know why
-		self.life_time = (self.range / self.speed) * 10
+		self.life_time = (self.range / self.speed) * 0.5
 		#print(self.life_time)
 		self.life_start = pygame.time.get_ticks()
+		self.counter = 0
 
 		
 
@@ -758,8 +742,8 @@ class Projectile(Entity):
 						self.pos[1] += dy
 
 						self.rect.center = (self.pos)
-
-					if pygame.time.get_ticks() > self.life_time + self.life_start:
+						self.counter += 1
+					if self.counter > self.life_time:
 						self.alive = False
 
 	def collide(self, dx, dy, tiles, entity_list, weapon_pickups, particles):
@@ -958,6 +942,8 @@ class Weapons_Chest(pygame.sprite.Sprite):
 
 
 class PickUp(pygame.sprite.Sprite):
+	pickup_sfx = pygame.mixer.Sound(os.path.join(os.path.join('Sounds', 'SFX'), 'Powerup.wav'))
+	pickup_sfx.set_volume(0.1)
 	def __init__(self, pos, img, size):
 		pygame.sprite.Sprite.__init__(self)
 		self.pos = pos 
@@ -1002,7 +988,7 @@ class HealthPickup(PickUp):
 				self.enabled = False
 				self.kill()
 			elif isinstance(args[0], Entity):
-				
+				self.pickup_sfx.play()
 				args[0].heal(self.heal_amount)
 				self.enabled = False
 				self.kill()
@@ -1029,7 +1015,8 @@ class WeaponPickup(PickUp):
 					args[2].add(Particles([self.rect.topleft[0] + offset[0], self.rect.topleft[1] + offset[1]], [0,0], [0,0], 500, (255, 255, 0)))
 				self.kill()
 				self.enabled = False
-			elif isinstance(args[0], Entity):				
+			elif isinstance(args[0], Entity):	
+				self.pickup_sfx.play()			
 				args[0].pickup(self.weapon, args[3])
 				self.enabled = False
 				self.kill()
