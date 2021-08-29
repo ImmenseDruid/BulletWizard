@@ -610,6 +610,7 @@ def main():
 						if player_wants_to_attack:
 							draw_pickup_text = False
 							pickup_info = None
+
 						else:
 							draw_pickup_text = True
 
@@ -640,8 +641,11 @@ def main():
 
 			if pygame.mouse.get_pressed()[0]:
 				if player_wants_to_attack:
-					player.attack(get_mouse_pos(), projectiles)
-					camera.pos = (camera.pos[0] + random.randrange(0, 5) - 2, camera.pos[1] + random.randrange(0, 5) - 2)
+					if player.attack(get_mouse_pos(), projectiles):
+						camera.pos = (camera.pos[0] + random.randrange(0, 10) - 5, camera.pos[1] + random.randrange(0, 10) - 5)
+
+
+					
 					for i in range(1):
 						offset = [random.randrange(-20, 20), random.randrange(-20, 20)]
 						particles.add(entities.Particles([200 + mana_bar.r1.size[0] + offset[0] + camera.pos[0], window.get_height() - 100 + offset[1] + camera.pos[1]], [0,0], [0,0], 500, (0, 0, 255)))

@@ -232,6 +232,8 @@ class Entity(pygame.sprite.Sprite):
 					self.mana = max(0, self.mana - self.weapon.mana_cost)
 					self.weapon.attack(pos, projectiles, angle)
 					self.fire_sound.play()
+					return True
+		return False
 
 	
 	def dash(self, particles):
@@ -298,6 +300,7 @@ class Player(Entity):
 			self.moveRight()
 
 		super().update(args[0], args[1], args[2], args[3])
+
 
 	def damage(self, amount):
 		self.health -= amount
@@ -651,7 +654,7 @@ class Boss(Enemy):
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
 				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 			elif self.pattern == self.CIRCLE:
-				self.fire_cooldown = 3000
+				self.fire_cooldown = 500
 				self.angle_offset = random.randrange(0, 360)
 				start_angle = angle			
 				for i in range(35):
@@ -683,7 +686,7 @@ class Boss(Enemy):
 				bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
 				args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 3))
 			elif self.pattern == self.LASERS:
-				self.fire_cooldown = 250
+				self.fire_cooldown = 100
 				self.angle_offset += 10
 				start_angle = angle			
 				for i in range(5):
@@ -691,7 +694,7 @@ class Boss(Enemy):
 					bullet_start_pos = [self.rect.centerx + math.cos(angle) * radius, self.rect.centery - math.sin(angle) * radius]
 					args[2].add(Projectile(bullet_start_pos, angle = angle, dist = 1000, img = self.bullet_img, speed = 2))
 			elif self.pattern == self.SEMICIRCLE:
-				self.fire_cooldown = 3000
+				self.fire_cooldown = 500
 				self.angle_offset = -90
 				start_angle = angle			
 				for i in range(18):
